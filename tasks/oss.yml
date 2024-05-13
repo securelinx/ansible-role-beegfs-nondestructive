@@ -36,48 +36,27 @@
       fail:
         msg: OSS device {{ oss_dev }} does not exist
       when: not oss_dev_stat.exists
-    - name: Unmount storage device if beegfs_force_format is true
-      mount:
-        path: "{{ oss_path }}"
-        state: unmounted
-      when: beegfs_force_format | bool
-      notify: Restart BeeGFS storage service
-    - name: Attempt to format if the device is not mounted or if beegfs_force_format is true
-      vars:
-        oss_dev_real: "{{ oss_dev_stat.lnk_source if oss_dev_stat.islnk else oss_dev_stat.path }}"
-      filesystem:
-        dev: "{{ oss_dev }}"
-        fstype: "{{ beegfs_fstype }}"
-        force: "{{ beegfs_force_format | bool }}"
-        opts: "{{ beegfs_filesystem_opts }}"
-      when: (oss_dev_real not in mounted_devs) or (beegfs_force_format | bool)
-      notify: Restart BeeGFS storage service
-    - name: Ensure the mount point exists
-      file:
-        path: "{{ oss_path }}"
-        state: directory
-    - name: Mount filesystem, fail if the fstype doesn't match
-      mount:
-        src: "{{ oss_dev }}"
-        path: "{{ oss_path }}"
-        fstype: "{{ beegfs_fstype }}"
-        state: mounted
-        opts: "{{ beegfs_mount_opts }}"
-      notify: Restart BeeGFS storage service
+    - name: check directory for BeeGFS metadata
+      stat:
+        path: {{ oss_path }}"
+        register: oss_dir
+    - ansible.builtin.assert:
+        that: oss_dir.stat.exists
+        fail_msg: "'oss_path' must exist and have the underlying filesystem mounted"
+   - ansible.builtin.meta:  end_play
+       when: not oss_dir.stat.exists
   become: true
   when: oss_dev_is_defined
 
-- name: Run storage service setup script
-  command: |
-    /opt/beegfs/sbin/beegfs-setup-storage -f \
-    -p {{ oss_path }} {{ oss_replace }} \
-    -m {{ beegfs_mgmt_host }} \
-    -c /etc/beegfs/{{ oss_port }}.d/beegfs-storage.conf \
-    -S {{ inventory_hostname }}-{{ oss_port }} \
-  args:
-    creates: "{{ oss_path }}/originalNodeID"
-  become: true
-  notify: Restart BeeGFS storage service
+  #/opt/beegfs/sbin/beegfs-setup-storage -f \
+  #   -p {{ oss_path }} {{ oss_replace }} \
+  #  -m {{ beegfs_mgmt_host }} \
+  #  -c /etc/beegfs/{{ oss_port }}.d/beegfs-storage.conf \
+  #  -S {{ inventory_hostname }}-{{ oss_port }} \
+  #args:
+  #  creates: "{{ oss_path }}/originalNodeID"
+  #become: true
+  #notify: Restart BeeGFS storage service
 
 - name: set TCP storage port
   lineinfile:

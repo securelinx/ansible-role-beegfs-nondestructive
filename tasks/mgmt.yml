@@ -6,20 +6,17 @@
   become: true
   notify: Restart BeeGFS mgmt service
 
-- name: Create directory for BeeGFS management service data
-  file:
-    path: "{{ beegfs_mgmt_path }}"
-    state: directory
-  become: true
-  notify: Restart BeeGFS mgmt service
+- name: check directory for BeeGFS management service data
+  stat:
+  path: {{ beegfs_mgmt_path }}"
+  register: mgmt_dir
+- ansible.builtin.assert:
+    that: mgmt_dir.stat.exists
+    fail_msg: "beegfs_mgmt_path' must exist and have the underlying filesystem mounted"
+- ansible.builtin.meta:  end_play
+  when: not mgmt_dir.stat.exists
 
-- name: Run management service setup script
-  command: "/opt/beegfs/sbin/beegfs-setup-mgmtd -p {{ beegfs_mgmt_path }} -f"
-  args:
-    creates: "{{ beegfs_mgmt_path }}/originalNodeID"
-  become: true
-  notify: Restart BeeGFS mgmt service
-
+#/opt/beegfs/sbin/beegfs-setup-mgmtd
 - name: Specify connInterfacesFile
   lineinfile:
     path: /etc/beegfs/beegfs-mgmtd.conf

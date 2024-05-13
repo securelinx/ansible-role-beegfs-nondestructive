@@ -21,9 +21,9 @@ beegfs_interfaces: []
 # Distribution-specific parameters
 beegfs_distro_vars:
   RedHat:
-    beegfs_repo_url: "https://www.beegfs.io/release/latest-stable/dists/beegfs-rhel7.repo"
+    beegfs_repo_url: "https://www.beegfs.io/release/latest-stable/dists/beegfs-rhel9.repo"
     beegfs_repo_key: "https://www.beegfs.io/release/latest-stable/gpg/RPM-GPG-KEY-beegfs"
-    beegfs_repo_file: "/etc/yum.repos.d/beegfs-rhel7.repo"
+    beegfs_repo_file: "/etc/yum.repos.d/beegfs-rhel9.repo"
     kernel_dev_pkg: "kernel-devel"
     rdma_dev_pkgs:
       - "librdmacm"
