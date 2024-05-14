@@ -1,4 +1,8 @@
 ---
+- name: debug vars
+  debug:
+    msg: "{{ oss_dev }} {{ oss_path }} {{ oss_dev_is_defined }} {{ oss_port }}  {{ oss_replace }}"
+
 - name: Install packages for BeeGFS object storage server
   package:
     name: beegfs-storage
@@ -35,16 +39,16 @@
     - name: Fail if OSS device does not exist
       fail:
         msg: OSS device {{ oss_dev }} does not exist
-      when: not oss_dev_stat.exists
+      when: not oss_dev_stat.stat.exists
     - name: check directory for BeeGFS metadata
       stat:
-        path: {{ oss_path }}"
-        register: oss_dir
+        path: "{{ oss_path }}"
+      register: oss_dir
     - ansible.builtin.assert:
         that: oss_dir.stat.exists
-        fail_msg: "'oss_path' must exist and have the underlying filesystem mounted"
-   - ansible.builtin.meta:  end_play
-       when: not oss_dir.stat.exists
+        fail_msg: "'oss_path' {{ oss_path }} must exist and have the underlying filesystem mounted"
+    - ansible.builtin.meta:  end_play
+      when: not oss_dir.stat.exists
   become: true
   when: oss_dev_is_defined
 
@@ -57,6 +61,24 @@
   #  creates: "{{ oss_path }}/originalNodeID"
   #become: true
   #notify: Restart BeeGFS storage service
+  #TODO add sysMgmtHost, storeAllowFirstRunInit=false, storeFsUUID storeStorageDirectory to beegfs-storage.conf in the oss_port directory and connDisableAuthentication, aor auth file
+  #Then it seems this putting into a ports directory doesnt work
+  #disable selinux? 
+  #open firewall
+- name: Specify never init new targets
+  lineinfile:
+    path: "/etc/beegfs/{{ oss_port }}.d/beegfs-storage.conf"
+    regexp: "^storeAllowFirstRunInit"
+    line: "storeAllowFirstRunInit           = false"
+  become: true
+  notify: Restart BeeGFS storage service
+- name: Disable Authentication on Storage
+  lineinfile:
+    path: "/etc/beegfs/{{ oss_port }}.d/beegfs-storage.conf"
+    regexp: "^connDisableAuthentication"
+    line: "connDisableAuthentication           = true"
+  become: true
+  notify: Restart BeeGFS storage service
 
 - name: set TCP storage port
   lineinfile:

@@ -1,6 +1,6 @@
 ---
 - name: If beegfs_state is present
-  include: create.yml
+  import_tasks: create.yml
   when: beegfs_state | lower == "present"
 
 ...

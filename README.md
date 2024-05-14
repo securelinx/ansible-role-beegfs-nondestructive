@@ -76,9 +76,6 @@ To create a cluster:
 
     # ansible-playbook beegfs.yml -i inventory-beegfs -e beegfs_state=present
 
-To destroy a cluster:
-
-    # ansible-playbook beegfs.yml -i inventory-beegfs -e beegfs_state=absent
 
 ## Notes
 

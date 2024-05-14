@@ -8,13 +8,29 @@
 
 - name: check directory for BeeGFS metadata
   stat:
-  path: {{ beegfs_meta_path }}"
+    path: "{{ beegfs_meta_path }}"
   register: meta_dir
 - ansible.builtin.assert:
     that: meta_dir.stat.exists
-    fail_msg: "'beegfs_meta_path' must exist and have the underlying filesystem mounted"
+    fail_msg: "'beegfs_meta_path' {{ beegfs_meta_path }}  must exist and have the underlying filesystem mounted"
 - ansible.builtin.meta:  end_play
   when: not meta_dir.stat.exists
+  #TODO add storeMetaDirectory, storellowFirstRinInt, storeFsUUID and sysMgmetdHost to /etc/ebeegfs/meegfs-meta.conf and the authentication connAuthFile
+- name: Specify never init new targets
+  lineinfile:
+    path: /etc/beegfs/beegfs-meta.conf
+    regexp: "^storeAllowFirstRunInit"
+    line: "storeAllowFirstRunInit           = false"
+  become: true
+  notify: Restart BeeGFS meta service
+
+- name: Disable Authentication Meta
+  lineinfile:
+    path: /etc/beegfs/beegfs-meta.conf
+    regexp: "^connDisableAuthentication"
+    line: "connDisableAuthentication           = true"
+  become: true
+  notify: Restart BeeGFS meta service
 
 - name: Specify connInterfacesFile
   lineinfile:
@@ -22,5 +38,6 @@
     regexp: "^connInterfacesFile"
     line: "connInterfacesFile           = /etc/beegfs/connInterfacesFile"
   become: true
-  notify: Restart BeeGFS meta service
+  notify: Restart BeeGFS meta servic
+
 ...

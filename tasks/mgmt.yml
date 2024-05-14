@@ -8,14 +8,14 @@
 
 - name: check directory for BeeGFS management service data
   stat:
-  path: {{ beegfs_mgmt_path }}"
+    path: "{{ beegfs_mgmt_path }}"
   register: mgmt_dir
 - ansible.builtin.assert:
     that: mgmt_dir.stat.exists
-    fail_msg: "beegfs_mgmt_path' must exist and have the underlying filesystem mounted"
+    fail_msg: "beegfs_mgmt_path' {{ beegfs_mgmt_path }} must exist and have the underlying filesystem mounted"
 - ansible.builtin.meta:  end_play
   when: not mgmt_dir.stat.exists
-
+  #TODO storeMgmtdDirectory andstoreAllowFirstRunInit to /etc/beegfs/beegfs-mgmtd.conf and connAuthFIle
 #/opt/beegfs/sbin/beegfs-setup-mgmtd
 - name: Specify connInterfacesFile
   lineinfile:
@@ -24,4 +24,22 @@
     line: "connInterfacesFile           = /etc/beegfs/connInterfacesFile"
   become: true
   notify: Restart BeeGFS mgmt service
+
+- name: Specify never init new targets
+  lineinfile:
+    path: /etc/beegfs/beegfs-mgmtd.conf
+    regexp: "^storeAllowFirstRunInit"
+    line: "storeAllowFirstRunInit           = false"
+  become: true
+  notify: Restart BeeGFS mgmt service
+
+- name: Disable Authentication
+  lineinfile:
+    path: /etc/beegfs/beegfs-mgmtd.conf
+    regexp: "^connDisableAuthentication"
+    line: "connDisableAuthentication           = true"
+  become: true
+  notify: Restart BeeGFS mgmt service
+
+...
 ...
